@@ -1,28 +1,48 @@
 import { Container } from 'typedi';
-import formData from 'form-data';
-import Mailgun from 'mailgun.js';
 import LoggerInstance from './logger';
-import agendaFactory from './agenda';
-import config from '@/config';
 
-export default ({ mongoConnection, models }: { mongoConnection; models: { name: string; model: any }[] }) => {
+export default ({ mongoConnection, schemas, controllers, repos, services}: {
+                    mongoConnection;
+                    schemas: { name: string; schema: any }[],
+                    controllers: {name: string; path: string }[],
+                    repos: {name: string; path: string }[],
+                    services: {name: string; path: string }[] }) => {
   try {
-    models.forEach(m => {
-      Container.set(m.name, m.model);
+    Container.set('logger', LoggerInstance);
+
+    /**
+     * We are injecting the mongoose models into the DI container.
+     * This is controversial but it will provide a lot of flexibility 
+     * at the time of writing unit tests.
+     */
+    schemas.forEach(m => {
+      // Notice the require syntax and the '.default'
+      let schema = require(m.schema).default;
+      Container.set(m.name, schema);
+    });
+  
+    repos.forEach(m => {
+      let repoClass = require(m.path).default;
+      let repoInstance = Container.get(repoClass);
+      Container.set(m.name, repoInstance);
     });
 
-    const agendaInstance = agendaFactory({ mongoConnection });
-    const mgInstance = new Mailgun(formData);
+    services.forEach(m => {
+      let serviceClass = require(m.path).default;
+      let serviceInstance = Container.get(serviceClass)
+      Container.set(m.name, serviceInstance);
+      });
 
-
-    Container.set('agendaInstance', agendaInstance);
-    Container.set('logger', LoggerInstance);
-    Container.set('emailClient', mgInstance.client({ key: config.emails.apiKey, username: config.emails.apiUsername }));
-    Container.set('emailDomain', config.emails.domain);
-
-    LoggerInstance.info('✌️ Agenda injected into container');
-
-    return { agenda: agendaInstance };
+    controllers.forEach(m => {
+      // load the @Service() class by its path
+      let controllerClass = require(m.path).default;
+      // create/get the instance of the @Service() class
+      let controllerInstance = Container.get(controllerClass);
+      // rename the instance inside the container
+      Container.set(m.name, controllerInstance);
+    });
+  
+    return;
   } catch (e) {
     LoggerInstance.error('🔥 Error on dependency injector loader: %o', e);
     throw e;

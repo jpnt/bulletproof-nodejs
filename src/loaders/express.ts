@@ -1,8 +1,9 @@
 import express from 'express';
+import bodyParser from 'body-parser';
 import cors from 'cors';
-import { OpticMiddleware } from '@useoptic/express-middleware';
-import routes from '@/api';
-import config from '@/config';
+import routes from '../api';
+import config from '../../config';
+
 export default ({ app }: { app: express.Application }) => {
   /**
    * Health Check endpoints
@@ -29,16 +30,16 @@ export default ({ app }: { app: express.Application }) => {
   // Maybe not needed anymore ?
   app.use(require('method-override')());
 
-  // Transforms the raw string of req.body into json
-  app.use(express.json());
+  // Middleware that transforms the raw string of req.body into json
+  app.use(bodyParser.json());
+  
+
+
   // Load API routes
   app.use(config.api.prefix, routes());
 
-  // API Documentation
-  app.use(OpticMiddleware({
-      enabled: process.env.NODE_ENV !== 'production',
-  }));
 
+  
   /// catch 404 and forward to error handler
   app.use((req, res, next) => {
     const err = new Error('Not Found');

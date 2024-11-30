@@ -1,42 +1,64 @@
 import expressLoader from './express';
 import dependencyInjectorLoader from './dependencyInjector';
 import mongooseLoader from './mongoose';
-import jobsLoader from './jobs';
 import Logger from './logger';
-//We have to import at least all the events once so they can be triggered
-import './events';
+
+import config from '../../config';
 
 export default async ({ expressApp }) => {
   const mongoConnection = await mongooseLoader();
   Logger.info('✌️ DB loaded and connected!');
 
-  /**
-   * WTF is going on here?
-   *
-   * We are injecting the mongoose models into the DI container.
-   * I know this is controversial but will provide a lot of flexibility at the time
-   * of writing unit tests, just go and check how beautiful they are!
-   */
-
-  const userModel = {
-    name: 'userModel',
-    // Notice the require syntax and the '.default'
-    model: require('../models/user').default,
+  const userSchema = {
+    // compare with the approach followed in repos and services
+    name: 'userSchema',
+    schema: '../persistence/schemas/userSchema',
   };
 
-  // It returns the agenda instance because it's needed in the subsequent loaders
-  const { agenda } = await dependencyInjectorLoader({
-    mongoConnection,
-    models: [
-      userModel,
-      // salaryModel,
-      // whateverModel
-    ],
-  });
-  Logger.info('✌️ Dependency Injector loaded');
+  const roleSchema = {
+    // compare with the approach followed in repos and services
+    name: 'roleSchema',
+    schema: '../persistence/schemas/roleSchema',
+  };
 
-  await jobsLoader({ agenda });
-  Logger.info('✌️ Jobs loaded');
+  const roleController = {
+    name: config.controllers.role.name,
+    path: config.controllers.role.path
+  }
+
+  const roleRepo = {
+    name: config.repos.role.name,
+    path: config.repos.role.path
+  }
+
+  const userRepo = {
+    name: config.repos.user.name,
+    path: config.repos.user.path
+  }
+
+  const roleService = {
+    name: config.services.role.name,
+    path: config.services.role.path
+  }
+
+  await dependencyInjectorLoader({
+    mongoConnection,
+    schemas: [
+      userSchema,
+      roleSchema
+    ],
+    controllers: [
+      roleController
+    ],
+    repos: [
+      roleRepo,
+      userRepo
+    ],
+    services: [
+      roleService
+    ]
+  });
+  Logger.info('✌️ Schemas, Controllers, Repositories, Services, etc. loaded');
 
   await expressLoader({ app: expressApp });
   Logger.info('✌️ Express loaded');

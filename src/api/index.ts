@@ -1,14 +1,14 @@
 import { Router } from 'express';
-import auth from './routes/auth';
-import user from './routes/user';
-import agendash from './routes/agendash';
+import auth from './routes/userRoute';
+import user from './routes/userRoute';
+import role from './routes/roleRoute';
 
-// guaranteed to get dependencies
 export default () => {
 	const app = Router();
+
 	auth(app);
 	user(app);
-	agendash(app);
-
+	role(app);
+	
 	return app
 }

@@ -20,14 +20,10 @@
     "outDir": "./build",
     "allowJs": true,
     "noEmit": false,
-    "esModuleInterop": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "esModuleInterop": true
   },
   "include": [
-    "./src/**/*"
+    "./src/**/*", "index.js"
   ],
   "exclude": [
     "node_modules",
